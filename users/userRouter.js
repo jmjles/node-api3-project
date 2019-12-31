@@ -1,47 +1,97 @@
-const express = require('express');
+const express = require("express");
 
 const router = express.Router();
-
-router.post('/', (req, res) => {
+const user = require("../users/userDb");
+const post = require("../posts/postDb");
+//middleware
+const valID = require("../middleware/validateUserID");
+const valUser = require("../middleware/validateUser");
+const valPost = require("../middleware/validatePost");
+router.post("/", async (req, res, next) => {
   // do your magic!
+
+  try {
+    valUser(req, res, next);
+    res.status(201).json(await user.insert(req.body.user));
+  } catch {
+    res.statusCode = 500;
+    next(`{message:"There was a problem creating the user"}`);
+  }
 });
 
-router.post('/:id/posts', (req, res) => {
+router.post("/:id/posts", async (req, res, next) => {
   // do your magic!
+  try {
+    valID(req, res, next);
+    valPost(req, res, next);
+    const data = {
+      ...req.body.post,
+      user_id:req.params.id
+    }
+    res.status(201).json(await post.insert({...data}));
+  } catch {
+    res.statusCode = 500;
+    next(`{message:"There was a problem creating the post"}`);
+  }
 });
 
-router.get('/', (req, res) => {
+router.get("/", async (req, res, next) => {
   // do your magic!
+  try {
+    res.status(200).json(await user.get());
+  } catch {
+    res.statusCode = 500;
+    next(`{message:"There was a problem retreaving data!"}`);
+  }
 });
 
-router.get('/:id', (req, res) => {
+router.get("/:id", async (req, res, next) => {
   // do your magic!
+  try {
+    valID(req, res, next);
+    res.status(200).json(await user.getById(req.params.id));
+  } catch {
+    res.statusCode = 500;
+    next(`{message:"There was a problem retreaving data!"}`);
+  }
 });
 
-router.get('/:id/posts', (req, res) => {
+router.get("/:id/posts", async (req, res, next) => {
   // do your magic!
+  try {
+    valID(req, res, next);
+    res.status(200).json(await user.getUserPosts(req.params.id));
+  } catch {
+    res.statusCode = 500;
+    next(`{message:"There was a problem retreaving data!"}`);
+  }
 });
 
-router.delete('/:id', (req, res) => {
+router.delete("/:id", async (req, res, next) => {
   // do your magic!
+  try {
+    valID(req, res, next);
+    await user.remove(req.params.id);
+    res.status(201).json(await user.get());
+  } catch {
+    res.statusCode = 500;
+    next(`{message: "User Could not be deleted"}`);
+  }
 });
 
-router.put('/:id', (req, res) => {
+router.put("/:id", async (req, res, next) => {
   // do your magic!
+    try {
+      valID(req, res, next);
+      valUser(req, res, next);
+      const data = {
+        ...req.body.user,
+      };
+      res.status(201).json(await user.update(req.params.id,{ ...data }));
+    } catch {
+      res.statusCode = 500;
+      next(`{message:"There was a problem updating the post"}`);
+    }
 });
-
-//custom middleware
-
-function validateUserId(req, res, next) {
-  // do your magic!
-}
-
-function validateUser(req, res, next) {
-  // do your magic!
-}
-
-function validatePost(req, res, next) {
-  // do your magic!
-}
 
 module.exports = router;
